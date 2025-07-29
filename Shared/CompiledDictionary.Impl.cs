@@ -1,0 +1,119 @@
+namespace Shared;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using AgileObjects.ReadableExpressions;
+using static System.Linq.Expressions.Expression;
+
+public partial class CompiledDictionary<TKey, TValue>
+{
+  private class Impl(IDictionary<TKey, TValue> inner)
+  {
+    private static readonly Type TypeValue = typeof(TValue);
+    private delegate bool TryGetValueDelegate(TKey value, out TValue result);
+    
+    private Func<TKey, TValue> _lookup = _ => throw new InvalidOperationException("Lookup not compiled yet");
+    private TryGetValueDelegate _tryGetValue = (_, out _) => throw new InvalidOperationException("TryGetValue not compiled yet");
+    private Func<TKey, bool> _containsKey = _ => throw new InvalidOperationException("ContainsKey not compiled yet");
+
+    public void Compile()
+    {
+      if (inner.Count == 0)
+      {
+        return;
+      }
+
+      CompileLookup();
+      CompileTryGetValue();
+      CompileContainsKey();
+    }
+
+    public bool TryGetValue(TKey key, out TValue value) => _tryGetValue(key, out value);
+    
+    public TValue this[TKey key] => _lookup(key);
+
+    public bool ContainsKey(TKey key) => _containsKey(key);
+    
+    private void CompileLookup()
+    {
+      var keyParameter = Parameter(typeof(TKey));
+      var defaultCase = ThrowException();
+      var body = CreateSwitchBody(keyParameter, defaultCase, v => Constant(v, TypeValue));
+      var lambda = Lambda<Func<TKey, TValue>>(body, keyParameter);
+      var str = lambda.ToReadableString();
+      _lookup = lambda.Compile();
+      return;
+
+      UnaryExpression ThrowException()
+      {
+        var keyToStringCall = Call(keyParameter, typeof(object).GetMethod(nameof(ToString))!);
+        var exceptionCtor = typeof(KeyNotFoundException).GetConstructor([typeof(string)]);
+        var unaryExpression = Throw(New(exceptionCtor!, keyToStringCall), TypeValue);
+        return unaryExpression;
+      }
+    }
+
+    private void CompileTryGetValue()
+    {
+      var keyParameter = Parameter(typeof(TKey));
+      var valueParameter = Parameter(TypeValue.MakeByRefType());
+      var defaultCase = ReturnValueBlock(false, default!);
+      var body = CreateSwitchBody(keyParameter, defaultCase, v => ReturnValueBlock(true, v));
+      var lambda = Lambda<TryGetValueDelegate>(body, keyParameter, valueParameter);
+      _tryGetValue = lambda.Compile();
+      return;
+
+      BlockExpression ReturnValueBlock(bool found, TValue value)
+      {
+        return Block(Assign(valueParameter, Constant(value, TypeValue)), Constant(found));
+      }
+    }
+
+    private void CompileContainsKey()
+    {
+      var keyParameter = Parameter(typeof(TKey));
+      var defaultCase = ReturnValue(false);
+      var body = CreateSwitchBody(keyParameter, defaultCase, _ => ReturnValue(true));
+      var lambda = Lambda<Func<TKey, bool>>(body, keyParameter);
+      _containsKey = lambda.Compile();
+      return;
+
+      Expression ReturnValue(bool found) => Constant(found, typeof(bool));
+    }
+    
+    private SwitchExpression CreateSwitchBody(Expression keyParameter, Expression defaultCase, Func<TValue, Expression> switchCaseBodyFunc)
+    {
+      // Expression that gets the key's hash code
+      var keyGetHashCodeCall = Call(keyParameter, typeof(object).GetMethod(nameof(GetHashCode))!);
+      
+      return Switch(
+        keyGetHashCodeCall, // switch condition
+        defaultCase, // default case
+        null, // use default comparer
+        inner // switch cases
+          .GroupBy(p => p.Key.GetHashCode())
+          .Select(g =>
+          {
+            if (g.Count() == 1)
+            {
+              return CreateSwitchCase(g.Key, g.Single().Value);
+            }
+
+            return SwitchCase(
+              Switch(
+                keyParameter, // switch on the actual key
+                defaultCase,
+                null,
+                g.Select(p => CreateSwitchCase(p.Key, p.Value))
+              ),
+              Constant(g.Key)
+            );
+          })
+      );
+
+      SwitchCase CreateSwitchCase(object key, TValue value) => SwitchCase(switchCaseBodyFunc(value), Constant(key));
+    }
+  }
+}
