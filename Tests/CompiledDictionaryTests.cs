@@ -127,7 +127,7 @@ public partial class CompiledDictionaryTests
     
     foreach (var i in values)
     {
-      Assert.Throws<InvalidOperationException>(() => _ = dict[i]);
+      Assert.Throws<KeyNotFoundException>(() => _ = dict[i]);
     }
   }
   
@@ -150,5 +150,16 @@ public partial class CompiledDictionaryTests
     
     Assert.That(dict[model1], Is.EqualTo(model1));
     Assert.That(dict[model2], Is.EqualTo(model2));
+  }
+  
+  [Test]
+  public void Test_09_Reset()
+  {
+    var dict = new CompiledDictionary<int, string> { [0] = "Value 0" };
+    dict.Compile();
+    Assert.That(dict[0], Is.EqualTo("Value 0"));
+    dict.Clear();
+    dict.Compile();
+    Assert.Throws<KeyNotFoundException>(() => _ = dict[0]);
   }
 }

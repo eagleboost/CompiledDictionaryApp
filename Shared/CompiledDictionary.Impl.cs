@@ -9,19 +9,27 @@ using static System.Linq.Expressions.Expression;
 
 public partial class CompiledDictionary<TKey, TValue>
 {
-  private class Impl(IDictionary<TKey, TValue> inner)
+  private class Impl
   {
+    private readonly IDictionary<TKey, TValue> _inner;
     private static readonly Type TypeValue = typeof(TValue);
     private delegate bool TryGetValueDelegate(TKey value, out TValue result);
     
-    private Func<TKey, TValue> _lookup = _ => throw new InvalidOperationException("Lookup not compiled yet");
-    private TryGetValueDelegate _tryGetValue = (_, out _) => throw new InvalidOperationException("TryGetValue not compiled yet");
-    private Func<TKey, bool> _containsKey = _ => throw new InvalidOperationException("ContainsKey not compiled yet");
+    private Func<TKey, TValue> _lookup ;
+    private TryGetValueDelegate _tryGetValue;
+    private Func<TKey, bool> _containsKey;
 
+    public Impl(IDictionary<TKey, TValue> inner)
+    {
+      _inner = inner;
+      Reset();
+    }
+    
     public void Compile()
     {
-      if (inner.Count == 0)
+      if (_inner.Count == 0)
       {
+        Reset();
         return;
       }
 
@@ -92,7 +100,7 @@ public partial class CompiledDictionary<TKey, TValue>
         keyGetHashCodeCall, // switch condition
         defaultCase, // default case
         null, // use default comparer
-        inner // switch cases
+        _inner // switch cases
           .GroupBy(p => p.Key.GetHashCode())
           .Select(g =>
           {
@@ -114,6 +122,13 @@ public partial class CompiledDictionary<TKey, TValue>
       );
 
       SwitchCase CreateSwitchCase(object key, TValue value) => SwitchCase(switchCaseBodyFunc(value), Constant(key));
+    }
+
+    private void Reset()
+    {
+      _lookup = _ => throw new KeyNotFoundException("Dictionary is empty");
+      _tryGetValue = (key, out value) => { value = default!; return false; };
+      _containsKey = _ => false;
     }
   }
 }
