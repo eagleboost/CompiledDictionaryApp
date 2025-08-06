@@ -3,5 +3,6 @@
 using BenchmarkDotNet.Running;
 using Shared;
 
-BenchmarkRunner.Run<Benchmarks>();
-BenchmarkRunner.Run<SmallCountBenchmarks>();
+// BenchmarkRunner.Run<Benchmarks>();
+// BenchmarkRunner.Run<SmallCountDictionaryBenchmarks>();
+BenchmarkRunner.Run<HashSetBenchmarks>();

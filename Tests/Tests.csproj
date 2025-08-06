@@ -24,10 +24,4 @@
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="CompiledDictionaryTests.Model.cs">
-      <DependentUpon>CompiledDictionaryTests.cs</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
 </Project>

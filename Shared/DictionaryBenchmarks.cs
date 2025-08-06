@@ -4,7 +4,7 @@ namespace Shared
   using System.Linq;
   using BenchmarkDotNet.Attributes;
 
-  public class Benchmarks
+  public class DictionaryBenchmarks
   {
     private readonly Dictionary<string, int> _normalDictionary = new();
 

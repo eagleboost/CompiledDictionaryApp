@@ -4,21 +4,20 @@ using System.Collections.Generic;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 
-public class SmallCountBenchmarks
+public class SmallCountDictionaryBenchmarks
 {
   private readonly Dictionary<string, int> _normalDictionary = new();
   private readonly CompiledDictionary<string, int> _compiledDictionary = new();
   private string[] _array;
+  private string _targetKey;
     
-  [Params(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)]
+  [Params(5, 6, 7)]
   public int Count { get; set; }
-
-  public string TargetKey { get; set; }
 
   [GlobalSetup]
   public void Setup()
   {
-    _array= new string[Count];
+    _array = new string[Count];
     // Seed the dictionaries with values
     foreach (var i in Enumerable.Range(0, Count))
     {
@@ -33,7 +32,7 @@ public class SmallCountBenchmarks
     _compiledDictionary.Compile();
 
     // Try to get the middle element
-    TargetKey = $"key_{Count / 2}";
+    _targetKey = $"key_{Count / 2}";
   }
 
   [Benchmark(Description = "Standard dictionary", Baseline = true)]

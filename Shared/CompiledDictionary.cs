@@ -5,10 +5,14 @@ using System.Collections.Generic;
 
 public partial class CompiledDictionary<TKey, TValue> : IDictionary<TKey, TValue>
 {
-  private readonly IDictionary<TKey, TValue> _inner = new Dictionary<TKey, TValue>();
+  private readonly IDictionary<TKey, TValue> _inner;
   private readonly Impl _impl;
-    
-  public CompiledDictionary() => _impl = new Impl(_inner);
+  
+  public CompiledDictionary(IEqualityComparer<TKey>? comparer = null)
+  {
+    _inner = new Dictionary<TKey, TValue>(comparer);
+    _impl = new Impl(_inner, comparer ?? EqualityComparer<TKey>.Default);
+  }
 
   public void Compile() => _impl.Compile();
 

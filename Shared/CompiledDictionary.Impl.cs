@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using AgileObjects.ReadableExpressions;
 using static System.Linq.Expressions.Expression;
 
@@ -11,7 +12,9 @@ public partial class CompiledDictionary<TKey, TValue>
 {
   private class Impl
   {
+    private static readonly MethodInfo GetHashCodeMethod = typeof(IEqualityComparer<TKey>).GetMethod(nameof(GetHashCode))!; 
     private readonly IDictionary<TKey, TValue> _inner;
+    private readonly IEqualityComparer<TKey> _comparer;
     private static readonly Type TypeValue = typeof(TValue);
     private delegate bool TryGetValueDelegate(TKey value, out TValue result);
     
@@ -19,17 +22,18 @@ public partial class CompiledDictionary<TKey, TValue>
     private TryGetValueDelegate _tryGetValue;
     private Func<TKey, bool> _containsKey;
 
-    public Impl(IDictionary<TKey, TValue> inner)
+    public Impl(IDictionary<TKey, TValue> inner, IEqualityComparer<TKey> comparer)
     {
       _inner = inner;
-      Reset();
+      _comparer = comparer;
+      Reset(out _lookup, out _tryGetValue, out _containsKey);
     }
     
     public void Compile()
     {
       if (_inner.Count == 0)
       {
-        Reset();
+        Reset(out _lookup, out _tryGetValue, out _containsKey);
         return;
       }
 
@@ -93,15 +97,15 @@ public partial class CompiledDictionary<TKey, TValue>
     
     private SwitchExpression CreateSwitchBody(Expression keyParameter, Expression defaultCase, Func<TValue, Expression> switchCaseBodyFunc)
     {
-      // Expression that gets the key's hash code
-      var keyGetHashCodeCall = Call(keyParameter, typeof(object).GetMethod(nameof(GetHashCode))!);
+      // Expression that gets the key's hash code using the comparer
+      var keyGetHashCodeCall = Call(Constant(_comparer), GetHashCodeMethod, keyParameter);
       
       return Switch(
         keyGetHashCodeCall, // switch condition
         defaultCase, // default case
         null, // use default comparer
         _inner // switch cases
-          .GroupBy(p => p.Key.GetHashCode())
+          .GroupBy(p => _comparer.GetHashCode(p.Key))
           .Select(g =>
           {
             if (g.Count() == 1)
@@ -121,14 +125,14 @@ public partial class CompiledDictionary<TKey, TValue>
           })
       );
 
-      SwitchCase CreateSwitchCase(object key, TValue value) => SwitchCase(switchCaseBodyFunc(value), Constant(key));
+      SwitchCase CreateSwitchCase(object hashCode, TValue value) => SwitchCase(switchCaseBodyFunc(value), Constant(hashCode));
     }
 
-    private void Reset()
+    private static void Reset(out Func<TKey, TValue> lookup, out TryGetValueDelegate tryGetValue, out Func<TKey, bool> containsKey)
     {
-      _lookup = _ => throw new KeyNotFoundException("Dictionary is empty");
-      _tryGetValue = (key, out value) => { value = default!; return false; };
-      _containsKey = _ => false;
+      lookup = _ => throw new KeyNotFoundException("Dictionary is empty");
+      tryGetValue = (_, out value) => { value = default!; return false; };
+      containsKey = _ => false;
     }
   }
 }

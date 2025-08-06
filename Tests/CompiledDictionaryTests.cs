@@ -94,8 +94,7 @@ public partial class CompiledDictionaryTests
     {
       Assert.That(dict.ContainsKey(i), Is.True);
     }
-  }  
-
+  } 
   
   [Test]
   public void Test_06_ContainsKey_False()
@@ -161,5 +160,16 @@ public partial class CompiledDictionaryTests
     dict.Clear();
     dict.Compile();
     Assert.Throws<KeyNotFoundException>(() => _ = dict[0]);
+  }
+  
+  [Test]
+  public void Test_10_CaseInsensitive()
+  {
+    var dict = new CompiledDictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+      ["A"] = "Value A"
+    };
+    dict.Compile();
+    Assert.That(dict["a"], Is.EqualTo("Value A"));
   }
 }

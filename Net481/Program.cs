@@ -8,7 +8,8 @@ namespace Net481
     public static void Main(string[] args)
     {
       // BenchmarkRunner.Run<Benchmarks>();
-      BenchmarkRunner.Run<SmallCountBenchmarks>();
+      // BenchmarkRunner.Run<SmallCountDictionaryBenchmarks>();
+      BenchmarkRunner.Run<HashSetBenchmarks>();
     }
   }
 }
