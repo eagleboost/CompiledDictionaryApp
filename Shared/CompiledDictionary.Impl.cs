@@ -48,6 +48,12 @@ public partial class CompiledDictionary<TKey, TValue>
 
     public bool ContainsKey(TKey key) => _containsKey(key);
     
+    public void Clear()
+    {
+      _inner.Clear();
+      Reset(out _lookup, out _tryGetValue, out _containsKey);
+    }
+    
     private void CompileLookup()
     {
       var keyParameter = Parameter(typeof(TKey));

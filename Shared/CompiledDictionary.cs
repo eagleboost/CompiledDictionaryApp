@@ -18,17 +18,19 @@ public partial class CompiledDictionary<TKey, TValue> : IDictionary<TKey, TValue
 
   public bool ContainsKey(TKey key) => _impl.ContainsKey(key);
 
-  public void Add(TKey key, TValue value) => _inner.Add(key, value);
-
-  public bool Remove(TKey key) => _inner.Remove(key);
-
-  public bool TryGetValue(TKey key, out TValue value) => _impl.TryGetValue(key, out value);
-
   public TValue this[TKey key]
   {
     get => _impl[key];
     set => _inner[key] = value;
   }
+  
+  public void Clear() => _impl.Clear();
+  
+  public void Add(TKey key, TValue value) => _inner.Add(key, value);
+
+  public bool Remove(TKey key) => _inner.Remove(key);
+
+  public bool TryGetValue(TKey key, out TValue value) => _impl.TryGetValue(key, out value);
 
   public ICollection<TKey> Keys => _inner.Keys;
 
@@ -39,9 +41,7 @@ public partial class CompiledDictionary<TKey, TValue> : IDictionary<TKey, TValue
   IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_inner).GetEnumerator();
 
   public void Add(KeyValuePair<TKey, TValue> item) => _inner.Add(item);
-
-  public void Clear() => _inner.Clear();
-
+  
   public bool Contains(KeyValuePair<TKey, TValue> item) => _inner.Contains(item);
 
   public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => _inner.CopyTo(array, arrayIndex);

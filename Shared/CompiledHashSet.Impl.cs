@@ -36,6 +36,12 @@ public sealed partial class CompiledHashSet<T>
     
     public bool Contains(T item) => _contains(item);
     
+    public void Clear()
+    {
+      _inner.Clear();
+      Reset(out _contains);
+    }
+    
     private void CompileContains()
     {
       var itemParameter = Parameter(typeof(T));

@@ -172,4 +172,17 @@ public partial class CompiledDictionaryTests
     dict.Compile();
     Assert.That(dict["a"], Is.EqualTo("Value A"));
   }
+  
+  [Test]
+  public void Test_11_Clear()
+  {
+    var dict = new CompiledDictionary<string, string>()
+    {
+      ["A"] = "Value A"
+    };
+    dict.Compile();
+    Assert.That(dict.Count, Is.EqualTo(1));
+    dict.Clear();
+    Assert.That(dict.Count, Is.EqualTo(0));
+  }
 }

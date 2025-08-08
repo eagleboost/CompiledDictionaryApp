@@ -76,4 +76,14 @@ public class CompiledHashSetTests
     hashSet.Compile();
     Assert.That(hashSet.Contains("a"), Is.EqualTo(true));
   }
+  
+  [Test]
+  public void Test_4_Clear()
+  {
+    var dict = new CompiledHashSet<string>() { "A" };
+    dict.Compile();
+    Assert.That(dict.Count, Is.EqualTo(1));
+    dict.Clear();
+    Assert.That(dict.Count, Is.EqualTo(0));
+  }
 }

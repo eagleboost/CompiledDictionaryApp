@@ -23,6 +23,8 @@ public sealed partial class CompiledHashSet<T> : IReadOnlyCollection<T>, ISet<T>
   
   public bool Contains(T item) => _impl.Contains(item);
 
+  public void Clear() => _impl.Clear();
+  
   public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_inner).GetEnumerator();
 
   IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -50,8 +52,6 @@ public sealed partial class CompiledHashSet<T> : IReadOnlyCollection<T>, ISet<T>
   public void UnionWith(IEnumerable<T> other) => _inner.UnionWith(other);
 
   public bool Add(T item) => _inner.Add(item);
-
-  public void Clear() => _inner.Clear();
   
   public void CopyTo(T[] array, int arrayIndex) => _inner.CopyTo(array, arrayIndex);
 
